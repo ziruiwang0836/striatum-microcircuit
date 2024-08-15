@@ -1,11 +1,9 @@
 from NeuroTools.parameters import ParameterSet
 from NeuroTools.parameters import ParameterRange
 from NeuroTools.parameters import ParameterSpace
-import numpy as np
-import straitum as st
-import nest
-import matplotlib.pyplot as plt
-def get_pdr_results():
+
+
+def get_parameters():
     p = ParameterSpace({})
     p.outpath = '.'
 
@@ -13,7 +11,7 @@ def get_pdr_results():
     p.timestep = 0.1
     p.min_delay = 0.1
     p.max_delay = 5.1
-    p.runtime = 1200.
+    p.runtime = 1500
 
     # Parameters for neuronal features
     #D1 and D2
@@ -40,7 +38,7 @@ def get_pdr_results():
 
     #Parameters for connection
     #d12d1
-    p.d12d1_p = 0.
+    p.d12d1_p = 0
     p.d12d1_w = 0
     p.d12d1_d = 2
     #d12d2
@@ -67,9 +65,9 @@ def get_pdr_results():
     p.d1_bk = 2500
     p.d2_bk = 2500
     p.fsi_bk = 2500
-    p.cor2d1_w = 3.55*0.9
-    p.cor2d2_w = 3.50*0.9
-    p.cor2fsi_w = 3.8*0.9
+    p.cor2d1_w = 3.55
+    p.cor2d2_w = 3.50
+    p.cor2fsi_w = 3.8
 
     #Parameters for MIP
     p.N = 1000
@@ -80,15 +78,12 @@ def get_pdr_results():
     p.q=0
     p.edge = 0 
 
+    p.prefix = 'PD_GluInh'
+
+    return p
 
 
-    # Record synchrony index
-    r_msn_syn_pd_recover=[]
-    nest.ResetKernel()
-    model = st.Striatum()
-    r_msn_pd_recover,r_d1_recover,r_d2_recover = model.run(p)
-    r_msn_syn_pd_recover.append([r_msn_pd_recover,r_d1_recover,r_d2_recover])
-    return r_msn_syn_pd_recover
+
 
 
 

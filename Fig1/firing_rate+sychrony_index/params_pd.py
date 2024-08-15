@@ -1,13 +1,9 @@
 from NeuroTools.parameters import ParameterSet
 from NeuroTools.parameters import ParameterRange
 from NeuroTools.parameters import ParameterSpace
-import numpy as np
-import nest
-import matplotlib.pyplot as plt
-import straitum as st
 
-def get_pd_results():
 
+def get_parameters():
     p = ParameterSpace({})
     p.outpath = '.'
 
@@ -15,7 +11,7 @@ def get_pd_results():
     p.timestep = 0.1
     p.min_delay = 0.1
     p.max_delay = 5.1
-    p.runtime = 1200
+    p.runtime = 1500
 
     # Parameters for neuronal features
     #D1 and D2
@@ -47,7 +43,7 @@ def get_pd_results():
     p.d12d1_d = 2
     #d12d2
     p.d12d2_p = 0.07*0.3
-    p.d12d2_w = -0.75*0.3
+    p.d12d2_w = -1*0.3
     p.d12d2_d = 2
     #d22d2
     p.d22d2_p = 0.36*0.5
@@ -80,14 +76,18 @@ def get_pd_results():
     p.q = 0 # between-cell correlation of MIP input
     p.edge = 0 
 
+    p.prefix = 'PD'
+
+    return p
+
     
-    # Record synchrony index
+'''    # Record synchrony index
     r_msn_syn_pd=[]
     nest.ResetKernel()
     model = st.Striatum()
     r_msn_pd,r_d1_pd,r_d2_pd = model.run(p)
     r_msn_syn_pd.append([r_msn_pd,r_d1_pd,r_d2_pd])
-    return r_msn_syn_pd
+    return r_msn_syn_pd'''
 
 
 

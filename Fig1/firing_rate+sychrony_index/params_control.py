@@ -3,7 +3,6 @@ from NeuroTools.parameters import ParameterRange
 from NeuroTools.parameters import ParameterSpace
 
 def get_parameters():
-
     p = ParameterSpace({})
     p.outpath = '.'
 
@@ -65,37 +64,17 @@ def get_parameters():
     p.d1_bk = 2500
     p.d2_bk = 2500
     p.fsi_bk = 2500
-    p.cor2d1_w = 3.55*1.1
-    p.cor2d2_w = 3.5*1.1
-    p.cor2fsi_w = 3.8*1.1
+    p.cor2d1_w = 3.55
+    p.cor2d2_w = 3.50
+    p.cor2fsi_w = 3.8
 
     #Parameters for MIP
     p.N = 1000
     p.r = 400     # MIP rate
-    p.c = 0.02#ParameterRange(np.arange(0,0.06,0.01)) # with-pool correlation in MIP
+    p.c = 0.02 # with-pool correlation in MIP
     p.q = 0
     p.edge = 0 
 
-    p.prefix = 'Ctl_Glu'
+    p.prefix = 'Control'
 
     return p
-
-'''
-r_msn_syn_pd = pd.get_pd_results()
-plt.plot([0.3,0.6],r_d1_l,color='green',alpha=0.5,linestyle='dashed',marker='o',label='D1_control')
-plt.plot([0.3,0.6],r_d2_l,color='green',alpha=0.5,linestyle='solid',marker='o',label='D2_control')
-plt.plot([0.3,0.6],r_d1_pd,color='grey',alpha=0.5,linestyle='dashed',marker='o',label='D1_PD')
-plt.plot([0.3,0.6],r_d2_pd,color='grey',alpha=0.5,linestyle='solid',marker='o',label='D2_PD')
-plt.title('Mean firing rate under different cortical input correlation')
-plt.ylabel('mean firing rate')
-plt.xlabel('input correlation')
-plt.legend()
-plt.show()
-#plt.savefig('./mean_firing_rate_normal.jpg')
-'''
-
-
-
-
-
-

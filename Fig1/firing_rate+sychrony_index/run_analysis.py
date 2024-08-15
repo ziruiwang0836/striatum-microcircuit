@@ -2,88 +2,173 @@ from NeuroTools.parameters import ParameterSet
 from NeuroTools.parameters import ParameterRange
 from NeuroTools.parameters import ParameterSpace
 import numpy as np
-import straitum as st
+import striatum as st
+import params_control as sham
 import params_pd as pd
 import params_pd_GluInh as pdr
 import params_control_Glu as glu
 import nest
 import matplotlib.pyplot as plt
 import pandas as pds
+import os
+import pickle
 
-p = ParameterSpace({})
-p.outpath = '.'
+output_dir = '/Users/peirui/code/striatum-microcircuit/Fig1/output/'
+os.makedirs(output_dir, exist_ok=True)
+#run simualation
+def run_simulation(sim_num,parms):
+    for i in range(1,sim_num+1):
+        nest.ResetKernel()
+        id = i
+        st.run(parms.get_parameters(),id,output_dir)
 
-# Parameters for running
-p.timestep = 0.1
-p.min_delay = 0.1
-p.max_delay = 5.1
-p.runtime = 1200
+#run_simulation(3,sham)
+#run_simulation(3,pd)
+run_simulation(3,pdr)
+#run_simulation(3,glu)
 
-# Parameters for neuronal features
-#D1 and D2
-p.gl1 = 12.5
-p.th1 = -45
-p.el1 = -80
-p.E_tau = 0.3
-p.I_tau = 2
-p.cm1 = 200
-p.E_ex1 = 0
-p.E_in1 = -64
-p.reset1 = -80
-p.d1_size = 2000
-p.d2_size = 2000
-p.fsi_size = 80
-#FSI
-p.gl_f = 25
-p.th_f = -54
-p.elf = -80
-p.cmf = 500
-p.E_exf = 0
-p.E_inf = -76
-p.reset1 = -80
+def load_data(parms_set,output_dir):
+    '''
+    load pickle data and organize into dict
+    parms_set: different types of parameters sets 
+    Control;PD;PD_GluInh';Ctl_Glu
+    '''
+    data_dict_spk = {'ts_d1': [], 'ts_d2': []}
+    data_dict_lfp = {
+        'd1_times': [], 'd1_g_ex': [], 'd1_g_in': [], 'd1_V_m': [],
+        'd2_times': [], 'd2_g_ex': [], 'd2_g_in': [], 'd2_V_m': []
+    }
+    # Load and process the output
+    for filename in os.listdir(output_dir):
+        char = filename.split('_')
+        if char[1]==parms_set:
+            category, subtype = char[0], char[3]
+            filepath = os.path.join(output_dir, filename)
 
-#Parameters for connection
-#d12d1
-p.d12d1_p = 0.26
-p.d12d1_w = -0.5
-p.d12d1_d = 2
-#d12d2
-p.d12d2_p = 0.07
-p.d12d2_w = -1
-p.d12d2_d = 2
-#d22d2
-p.d22d2_p = 0.36
-p.d22d2_w = -1
-p.d22d2_d = 2
-#d22d1
-p.d22d1_p = 0.27
-p.d22d1_w = -1.2
-p.d22d1_d = 2
-#fsi2d1
-p.fsi2d1_p = 0.54
-p.fsi2d1_w = -2.5
-p.fsi2d1_d = 1
-#fsi2d2 
-p.fsi2d2_p = 0.36
-p.fsi2d2_w = -2.5
-p.fsi2d2_d = 1
-# background input
-p.d1_bk = 2500
-p.d2_bk = 2500
-p.fsi_bk = 2500
-p.cor2d1_w = 3.55
-p.cor2d2_w = 3.50
-p.cor2fsi_w = 3.8
+            # Load the pickle file
+            with open(filepath, "rb") as file:
+                evs = pickle.load(file)
 
-#Parameters for MIP
-p.N = 1000
-p.r = 400     # MIP rate
-p.c = 0.02 # with-pool correlation in MIP
-p.q = 0
-p.edge = 0 
+            # Process 'spk' data
+            if category == 'spk' and subtype in ['d1', 'd2']:
+                ts = evs['events']['times']
+                data_dict_spk[f'ts_{subtype}'].append(ts)
 
+            # Process 'lfp' data
+            if category == 'lfp' and subtype in ['d1', 'd2']:
+                for key in ['times', 'g_ex', 'g_in', 'V_m']:
+                    data_dict_lfp[f'{subtype}_{key}'].append(evs[key])
+    return data_dict_spk,data_dict_lfp
 
-msn_sham = []
+def process_data_spk_firing(data_dict_spk,start_time,end_time,msn_size):
+ '''
+ Calculate the mean firing rate of D1 and D2 MSNs.
+    
+  Parameters:
+  data_dict_spk (dict): Dictionary containing spike times for D1 and D2 neurons.
+  start_time (float): Start time in seconds for calculating the firing rate.
+  end_time (float): End time in seconds for calculating the firing rate.
+  msn_size (int): Number of neurons in each population (D1 or D2).
+  
+  Returns:
+  tuple: Two lists containing the mean firing rates for D1 and D2 neurons.
+ '''
+ 
+ # Calculate the mean firing rate of D1,D2and FSI populations
+ d1_firing=[]
+ d2_firing=[]
+
+ duration_secs = float(end_time - start_time)
+ start_ms = start_time * 1000
+ end_ms = end_time * 1000
+ for key, spike_times in data_dict_spk.items():
+    
+    spikes_in_window = [np.sum((spk_times > start_ms) & (spk_times < end_ms)) for spk_times in spike_times]
+    firing_rate = [spk_in_window/ duration_secs / float(msn_size) for spk_in_window in spikes_in_window]
+
+    if key.split('_')[1] == 'd1':
+        d1_firing.append(firing_rate)
+    elif key.split('_')[1] == 'd2':
+        d2_firing.append(firing_rate)
+
+ return d1_firing[0], d2_firing[0]
+
+def process_data_spk_synchrony_index(data_dict_spk,start_time,end_time):
+    '''
+    calculate sychrony index , refer to Yim et al. 2011 Fano factors
+    '''
+    
+    syn_inx_d1 = []
+    syn_inx_d2 = []
+    start_ms = int(start_time * 1000)
+    end_ms = int(end_time * 1000)
+
+    for key, spike_times_list in data_dict_spk.items():
+        # Loop through each neuron's spike times
+        for spk_times in spike_times_list:
+            count_list = []
+            
+            # Calculate spike counts in 5 ms bins
+            for i in range(start_ms, end_ms, 5):
+                count = np.sum((spk_times > i) & (spk_times <= i + 5))
+                count_list.append(count)
+            
+            # Calculate the synchrony index as variance/mean of spike counts
+            mean_count = np.mean(count_list)
+            var_count = np.var(count_list)
+            synchrony_index = var_count / mean_count if mean_count > 0 else 0
+        
+            if key.split('_')[1] == 'd1':
+                syn_inx_d1.append(synchrony_index)
+            elif key.split('_')[1] == 'd2':
+                syn_inx_d2.append(synchrony_index)
+
+    return syn_inx_d1, syn_inx_d2
+
+data_dict_spk_ctl,data_dict_lfp_ctl = load_data('Control',output_dir)
+data_dict_spk_pd,data_dict_lfp_pd = load_data('PD',output_dir)
+data_dict_spk_pdr,data_dict_lfp_pdr = load_data('PD_GluInh',output_dir)
+data_dict_spk_glu,data_dict_lfp_glu = load_data('Ctl_Glu',output_dir)
+
+d1_firing_ctl,d2_firing_ctl = process_data_spk_firing(data_dict_spk_ctl,0.2,1.2,2000)
+d1_firing_pd,d2_firing_pd = process_data_spk_firing(data_dict_spk_pd,0.2,1.2,2000)
+d1_firing_pdr,d2_firing_pdr = process_data_spk_firing(data_dict_spk_pdr,0.2,1.2,2000)
+d1_firing_glu,d2_firing_glu = process_data_spk_firing(data_dict_spk_glu,0.2,1.2,2000)
+
+# Calculate means
+mean_d1_ctl = np.mean(d1_firing_ctl)
+mean_d2_ctl = np.mean(d2_firing_ctl)
+
+mean_d1_glu = np.mean(d1_firing_glu)
+mean_d2_glu = np.mean(d2_firing_glu)
+
+mean_d1_pd = np.mean(d1_firing_pd)
+mean_d2_pd = np.mean(d2_firing_pd)
+
+mean_d1_pdr = np.mean(d1_firing_pdr)
+mean_d2_pdr = np.mean(d2_firing_pdr)
+
+# Data for bar chart
+labels = ['Control', 'Control+Glu Exc', 'No DA', 'No DA+Glu Inh']
+d1_means = [mean_d1_ctl, mean_d1_glu, mean_d1_pd, mean_d1_pdr]
+d2_means = [mean_d2_ctl, mean_d2_glu, mean_d2_pd, mean_d2_pdr]
+
+x = np.arange(len(labels))  # label locations
+width = 0.35  # width of the bars
+
+fig, ax = plt.subplots()
+rects1 = ax.bar(x - width/2, d1_means, width, label='D1')
+rects2 = ax.bar(x + width/2, d2_means, width, label='D2')
+
+ax.set_ylabel('Frequency (Hz)')
+ax.set_xticks(x)
+ax.set_xticklabels(labels)
+ax.legend()
+
+fig.tight_layout()
+plt.show()
+
+'''msn_sham = []
 msn_pd=[]
 msn_pdr=[]
 msn_glu=[]
@@ -161,7 +246,7 @@ firing_result['d2_glu'] = pds.DataFrame(glu_d2_firing)
 firing_result.columns=['d1','d2','d1_pd','d2_pd','d1_pdr','d2_pdr','d1_glu','d2_glu']
 #firing_result.to_excel('firing_result_q01.xlsx')
 
-
+'''
 '''def moving_average(data, window_size):
     return np.convolve(data, np.ones(window_size)/window_size, mode='valid')
 window_size=2
