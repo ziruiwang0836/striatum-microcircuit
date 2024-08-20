@@ -2,6 +2,7 @@
 ## striatum-microcircuit using I-F neurons
 
 The code of M1-BG-Th circuit is based on the work of Yim et al. 2011
+
 first install nest-simulator following https://nest-simulator.readthedocs.io/en/stable/installation/index.html
 
 ### Reference:
@@ -24,6 +25,7 @@ first install nest-simulator following https://nest-simulator.readthedocs.io/en/
 ## M1-BG-Th circuit using H-H neuron
 
 The code of M1-BG-Th circuit is based on the work of Yu et al. 2022
+
 first install the netpyne and neuron following https://www.netpyne.org/documentation/installation
 
 
@@ -35,7 +37,7 @@ first install the netpyne and neuron following https://www.netpyne.org/documenta
 
 3. The connectivity of striatum is based on Yim et al. 2011, Bahuguna et al. 2015 and Damodaran et al. 2015
 
-4. Simualtion of PD state include the alternations within striatal connectivity (Damodaran et al. 2015) and GPe-STN loop (Yu et al. 2022), and the strength of cortico-STN connection (West et al. 2018)
+4. Simualtion of PD state include the alternations within striatal connectivity (Damodaran et al. 2015) and GPe-STN loop (Yu et al. 2022), and the strengthening of cortico-STN connection (West et al. 2018)
 
 ### Instructions to setup the model
 
