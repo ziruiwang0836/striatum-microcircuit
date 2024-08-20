@@ -1,7 +1,7 @@
 # striatum-microcircuit
 ## striatum-microcircuit using I-F neurons
 
-The code of M1-BG-Th circuit is based on the work of Yim et al. 2011
+The code of striatum-microcircuit is based on the work of Yim et al. 2011
 
 first install nest-simulator following https://nest-simulator.readthedocs.io/en/stable/installation/index.html
 
